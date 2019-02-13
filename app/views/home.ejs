@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Home</title>
+    <!--styles-->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <!--fullcalendar-->
+    <link rel='stylesheet' href='/fullcalendar-3.10.0/fullcalendar.css'/>
+</head>
+<body>
+
+    <div class="container-fluid">
+
+        <h3>Adicione um evento clicando no dia desejado</h3>
+        <br>
+        
+        <!-- Modal -->
+        <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Novo Evento</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="descricao">Descrição</label>
+                        <input class="form-control" type="text" id="title" name="title">
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao">Data/Hora início</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input class="form-control" type="date" id="start" name="start">
+                            </div>
+                            <div class="col-6">
+                                <input class="form-control" type="time" id="time_start" name="start">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao">Data/Hora término</label>
+                        <div class="row">
+                            <div class="col-6">                                        
+                                <input class="form-control" type="date" id="end" name="end">
+                            </div>
+                            <div class="col-6">
+                                <input class="form-control" type="time" id="time_end" name="start">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button id="addEvento" type="button" class="btn btn-primary">Adicionar</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        <!-- /#Modal -->
+
+        <div class="container" id="calendar"></div>
+        
+    </div>
+
+
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="/js/jquery-3.3.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- fullcalendar imports-->
+    <!-- <script src="/fullcalendar-3.10.0/lib/jquery.min.js"></script> -->
+    <script src="/fullcalendar-3.10.0/lib/moment.min.js"></script>    
+    <script src="/fullcalendar-3.10.0/fullcalendar.js"></script>
+    <script src="/fullcalendar-3.10.0/locale-all.js"></script>
+
+    <!-- moment-timezine -->
+    <!--
+    <script src="/js/moment-timezone-with-data.js"></script>
+    -->
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+    <!-- fullcalendar -->
+    <script>
+
+        $(document).ready(function(){ //ao carregar a pagina executa a funcao
+            var calendar = $('#calendar').fullCalendar({ //carrega o calendario na div id calendar
+                editable: true, //permite editar o calendario
+                displayEventEnd: true, //mostrar o horario do final do evento
+                header: { //define as opcoes do cabecalho do calendario
+                    left: 'prev,next today', //opcoes da esquerda
+                    center: 'title', //opcoes do centro
+                    right: 'month,agendaWeek,agendaDay' //opcoes da direita
+                },
+                locale: 'pt-br', //define a linguagem
+                timezone: 'local', //define a timezone
+                //ignoreTimezone: true,
+                events: { //busca os eventos do calendario fazendo uma requisicao POST para a url
+                    url: '/carregarEventos',
+                    type: 'POST'
+                },
+                selectable: true, //permite selecionar um ou mais dias no calendario
+                selectHelper: true,
+                select: function(start, end){
+                    
+                    $("#modal").modal('show'); //abre a modal               
+                    console.log('abriu modal');
+                    //console.log(moment(start));
+                   //console.log(moment(end).subtract(1, 'days').format("YYYY-MM-DD"));                   
+
+                    //$("#start").val($.fullCalendar.formatDate(start, "YYYY-MM-DD")); //seta a data de inicio do evento                    
+                    //$("#end").val($.fullCalendar.formatDate(end, "YYYY-MM-DD")); //seta a data do final
+                    $("#start").val(moment(start).format("YYYY-MM-DD"));  //seta a data de inicio do evento                                        
+                    $("#end").val(moment(end).subtract(1, 'days').format("YYYY-MM-DD"));  //seta a data do final. Diminuo um 1 dia, pois por padrao a data final e sempre o proximo dia
+                    
+                    //console.log(moment(start).format("YYYY-MM-DD"));
+                    //console.log(moment(end).subtract(1, 'days').format("YYYY-MM-DD"));
+                                        
+                    $("#addEvento").off('click').click(function(){ //o off impede que varios eventos sejam carregados, toda vez que o botao for clicado
+                        console.log('clicou na data');
+                        var title = $("#title").val();
+                        var s = $("#start").val();                        
+                        var time_start = $("#time_start").val();
+                        console.log(time_start);
+                        var e = $("#end").val();                        
+                        var time_end = $("#time_end").val();
+                        console.log(time_end);
+
+                        //var tzoffset = (new Date()).getTimezoneOffset() * 60000;
+                        //console.log(tzoffset);
+
+                        var t = (s + ' ' + time_start + ':00');
+                        var u = new Date(t);           
+                        var start = u.getFullYear().toString() + "-";
+                        start += (u.getMonth()+1).toString().padStart(2, '0') + "-"; //soma 1 no mes, pois ele e um array de 11 posicoes (0-11)
+                        start += u.getDate().toString().padStart(2, '0') + "T";
+                        start += u.getHours().toString().padStart(2, '0') + ":";
+                        start += u.getMinutes().toString().padStart(2, '0') + ":";
+                        start += u.getSeconds().toString().padStart(2, '0');                    
+                        //var start = new Date(u - tzoffset).toISOString().slice(0, -1);
+                        //var start = u.toISOString().slice(0, -1);
+                        //var start = u.toISOString();
+
+                        var z = (e + ' ' + time_end + ':00');
+                        var x = new Date(z);
+                        var end = x.getFullYear().toString() + "-";
+                        end += (x.getMonth()+1).toString().padStart(2, '0') + "-"; //soma 1 no mes, pois ele e um array de 11 posicoes (0-11)
+                        end += x.getDate().toString().padStart(2, '0') + "T";
+                        end += x.getHours().toString().padStart(2, '0') + ":";
+                        end += x.getMinutes().toString().padStart(2, '0') + ":";
+                        end += x.getSeconds().toString().padStart(2, '0');
+                        //var end = new Date(x - tzoffset).toISOString().slice(0, -1);
+                        //var end = x.toISOString().slice(0, -1);
+                        //var end = x.toISOString();
+
+                        console.log('start: ' + start + ' end: ' + end);
+                        
+                        $.ajax({
+                            url: '/adicionarEvento',
+                            type: 'POST',
+                            data:{title: title, start: start, end: end},
+                            success: function(){
+                                console.log('sucesso');
+                                calendar.fullCalendar('refetchEvents'); //atualizar calendario
+                                var r = confirm('Evento Adicionado!');// alerta com confirmacao
+                                if(r == true){
+                                    $("#modal").modal('hide'); //fecha modal
+                                } else {
+                                    $("#modal").modal('hide'); //fecha modal
+                                };
+                            }
+                        });
+                        
+                    });
+                }
+            });
+        });
+    
+    </script>
+            
+
+</body>
+</html>
